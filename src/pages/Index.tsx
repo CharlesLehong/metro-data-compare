@@ -12,13 +12,15 @@ import {
   getTotalDebt,
   getDebtByMetro,
   getRevenueByMetro,
+  getMetricsByPeriod,
   type MunicipalityData 
 } from '@/utils/csvParser';
-import { Database, TrendingUp, Building2, ArrowRight, DollarSign } from 'lucide-react';
+import { Database, TrendingUp, Building2, ArrowRight, DollarSign, LineChart } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { RevenueByMetroChart } from '@/components/RevenueByMetroChart';
+import { PeriodTrendsChart } from '@/components/PeriodTrendsChart';
 
 const Index = () => {
   const [data, setData] = useState<MunicipalityData[]>([]);
@@ -75,6 +77,8 @@ const Index = () => {
   const totalRevenue1 = revenue1.metro + revenue1.nonMetro;
   const totalRevenue2 = revenue2.metro + revenue2.nonMetro;
 
+  const periodMetrics = getMetricsByPeriod(data);
+
   const formatPeriodLabel = (period: string) => {
     const date = new Date(period);
     return date.toLocaleDateString('en-ZA', { year: 'numeric', month: 'long' });
@@ -112,6 +116,15 @@ const Index = () => {
             Compare Eskom municipality debt data across different time periods
           </p>
         </header>
+
+        {/* Period Trends */}
+        <section className="mb-8">
+          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+            <LineChart className="h-6 w-6 text-primary" />
+            Historical Trends - Count, Debt & Revenue by Period
+          </h2>
+          <PeriodTrendsChart data={periodMetrics} title="All Periods Overview" />
+        </section>
 
         {/* Period Selectors */}
         <Card className="mb-8 border-border">
