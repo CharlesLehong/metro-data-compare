@@ -33,7 +33,7 @@ const Index = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const parsedData = await parseCSV('/data/Eskom_MUN_Data.csv');
+        const parsedData = await parseCSV();
         setData(parsedData);
         
         const availablePeriods = getAvailablePeriods(parsedData);

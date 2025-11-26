@@ -8,8 +8,12 @@ export interface MunicipalityData {
   [key: string]: string | number;
 }
 
-export const parseCSV = async (filePath: string): Promise<MunicipalityData[]> => {
-  const response = await fetch(filePath);
+// Azure Blob Storage SAS URL
+const AZURE_BLOB_URL = "https://bootsurewebapptest.blob.core.windows.net/eskom-bi/NERSA.csv?sp=r&st=2025-11-26T09:45:39Z&se=2025-11-27T18:00:39Z&spr=https&sv=2024-11-04&sr=b&sig=wWYCyMxZSxdAZB4oBD4RKJj4K0KwpSrEUHBStXjI9E8%3D";
+
+export const parseCSV = async (filePath?: string): Promise<MunicipalityData[]> => {
+  const url = filePath || AZURE_BLOB_URL;
+  const response = await fetch(url);
   const text = await response.text();
   
   const lines = text.split('\n');
