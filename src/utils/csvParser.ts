@@ -97,3 +97,14 @@ export const getCashBasisCount = (data: MunicipalityData[]): Record<string, numb
   
   return counts;
 };
+
+export const getDebtByCashBasis = (data: MunicipalityData[]): Record<string, number> => {
+  const debts: Record<string, number> = {};
+  
+  data.forEach(row => {
+    const value = row.CASH_BASIS_RECOGNISE_REVENUE as string || 'Unknown';
+    debts[value] = (debts[value] || 0) + (row.TOT_DEBT || 0);
+  });
+  
+  return debts;
+};
