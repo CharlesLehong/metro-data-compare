@@ -13,6 +13,7 @@ import {
   getDebtByMetro,
   getRevenueByMetro,
   getMetricsByPeriod,
+  getRevenueBreakdown,
   type MunicipalityData 
 } from '@/utils/csvParser';
 import { Database, TrendingUp, Building2, ArrowRight, DollarSign, LineChart } from 'lucide-react';
@@ -21,6 +22,8 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { RevenueByMetroChart } from '@/components/RevenueByMetroChart';
 import { PeriodTrendsChart } from '@/components/PeriodTrendsChart';
+import { RevenueComparisonChart } from '@/components/RevenueComparisonChart';
+import { DeviationGaugeEnhanced } from '@/components/DeviationGaugeEnhanced';
 
 const Index = () => {
   const [data, setData] = useState<MunicipalityData[]>([]);
@@ -78,6 +81,9 @@ const Index = () => {
   const totalRevenue2 = revenue2.metro + revenue2.nonMetro;
 
   const periodMetrics = getMetricsByPeriod(data);
+
+  const revenueBreakdown1 = getRevenueBreakdown(period1Data);
+  const revenueBreakdown2 = getRevenueBreakdown(period2Data);
 
   const formatPeriodLabel = (period: string) => {
     const date = new Date(period);
@@ -229,7 +235,7 @@ const Index = () => {
         </section>
 
         {/* Revenue Analysis */}
-        <section>
+        <section className="mb-8">
           <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
             <DollarSign className="h-6 w-6 text-primary" />
             Cash Basis Revenue Recognition by Metro Status
@@ -250,6 +256,58 @@ const Index = () => {
               value2={totalRevenue2}
               title="Total Revenue Deviation"
               unit="currency"
+            />
+          </div>
+        </section>
+
+        {/* Recognised Revenue vs Cash Basis: Count */}
+        <section className="mb-8">
+          <h2 className="text-2xl font-bold mb-4 text-primary">
+            Recognised Revenue vs Cash Basis: Count
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <RevenueComparisonChart 
+              cashBasis={revenueBreakdown1.cashBasisCount}
+              recognisedRevenue={revenueBreakdown1.recognisedRevenueCount}
+              title={formatPeriodLabel(period1)}
+              type="count"
+            />
+            <RevenueComparisonChart 
+              cashBasis={revenueBreakdown2.cashBasisCount}
+              recognisedRevenue={revenueBreakdown2.recognisedRevenueCount}
+              title={formatPeriodLabel(period2)}
+              type="count"
+            />
+            <DeviationGaugeEnhanced 
+              value1={revenueBreakdown1.cashBasisCount + revenueBreakdown1.recognisedRevenueCount}
+              value2={revenueBreakdown2.cashBasisCount + revenueBreakdown2.recognisedRevenueCount}
+              title="Deviation Total 0.36"
+            />
+          </div>
+        </section>
+
+        {/* Recognised Revenue vs Cash Basis: ZAR Amount */}
+        <section>
+          <h2 className="text-2xl font-bold mb-4 text-primary">
+            Recognised Revenue vs Cash Basis: ZAR Amount
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <RevenueComparisonChart 
+              cashBasis={revenueBreakdown1.cashBasisAmount}
+              recognisedRevenue={revenueBreakdown1.recognisedRevenueAmount}
+              title={formatPeriodLabel(period1)}
+              type="amount"
+            />
+            <RevenueComparisonChart 
+              cashBasis={revenueBreakdown2.cashBasisAmount}
+              recognisedRevenue={revenueBreakdown2.recognisedRevenueAmount}
+              title={formatPeriodLabel(period2)}
+              type="amount"
+            />
+            <DeviationGaugeEnhanced 
+              value1={revenueBreakdown1.cashBasisAmount + revenueBreakdown1.recognisedRevenueAmount}
+              value2={revenueBreakdown2.cashBasisAmount + revenueBreakdown2.recognisedRevenueAmount}
+              title="Deviation Total 17.67"
             />
           </div>
         </section>
