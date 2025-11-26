@@ -5,6 +5,7 @@ import { MetroDonutChart } from '@/components/MetroDonutChart';
 import { MetroDebtDonutChart } from '@/components/MetroDebtDonutChart';
 import { DeviationGauge } from '@/components/DeviationGauge';
 import { CashBasisDonutChart } from '@/components/CashBasisDonutChart';
+import { CashBasisDebtDonutChart } from '@/components/CashBasisDebtDonutChart';
 import { 
   parseCSV, 
   getAvailablePeriods, 
@@ -13,6 +14,7 @@ import {
   getTotalDebt,
   getDebtByMetro,
   getCashBasisCount,
+  getDebtByCashBasis,
   type MunicipalityData 
 } from '@/utils/csvParser';
 import { Database, TrendingUp, Building2 } from 'lucide-react';
@@ -69,6 +71,9 @@ const Index = () => {
 
   const cashBasis1 = getCashBasisCount(period1Data);
   const cashBasis2 = getCashBasisCount(period2Data);
+
+  const cashBasisDebt1 = getDebtByCashBasis(period1Data);
+  const cashBasisDebt2 = getDebtByCashBasis(period2Data);
 
   const formatPeriodLabel = (period: string) => {
     const date = new Date(period);
@@ -203,10 +208,10 @@ const Index = () => {
         </section>
 
         {/* Cash Basis Revenue Recognition Analysis */}
-        <section>
+        <section className="mb-8">
           <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
             <Database className="h-6 w-6 text-primary" />
-            Cash Basis Revenue Recognition
+            Cash Basis Revenue Recognition - Record Count
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <CashBasisDonutChart 
@@ -222,6 +227,30 @@ const Index = () => {
               value2={period2Data.length}
               title="Record Count Deviation"
               unit="count"
+            />
+          </div>
+        </section>
+
+        {/* Total Debt by Cash Basis Revenue Recognition */}
+        <section>
+          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+            <TrendingUp className="h-6 w-6 text-primary" />
+            Total Debt by Cash Basis Revenue Recognition
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <CashBasisDebtDonutChart 
+              debts={cashBasisDebt1} 
+              title={formatPeriodLabel(period1)}
+            />
+            <CashBasisDebtDonutChart 
+              debts={cashBasisDebt2} 
+              title={formatPeriodLabel(period2)}
+            />
+            <DeviationGauge 
+              value1={debt1}
+              value2={debt2}
+              title="Total Debt Deviation"
+              unit="currency"
             />
           </div>
         </section>
