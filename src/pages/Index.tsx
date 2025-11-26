@@ -284,7 +284,16 @@ const Index = () => {
             />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="mb-6">
+            <DeviationGauge 
+              value1={ageBucketCounts1.reduce((sum, item) => sum + item['0-15'] + item['16-30'] + item['31-60'] + item['61-90'] + item['90+'], 0)}
+              value2={ageBucketCounts2.reduce((sum, item) => sum + item['0-15'] + item['16-30'] + item['31-60'] + item['61-90'] + item['90+'], 0)}
+              title="Age Bucket Record Count Deviation"
+              unit="count"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             <AgeBucketBarChart 
               data={ageBucketAmounts1}
               title={`Amount (ZAR) - ${formatPeriodLabel(period1)}`}
@@ -296,6 +305,13 @@ const Index = () => {
               isAmount={true}
             />
           </div>
+
+          <DeviationGauge 
+            value1={ageBucketAmounts1.reduce((sum, item) => sum + item['0-15'] + item['16-30'] + item['31-60'] + item['61-90'] + item['90+'], 0)}
+            value2={ageBucketAmounts2.reduce((sum, item) => sum + item['0-15'] + item['16-30'] + item['31-60'] + item['61-90'] + item['90+'], 0)}
+            title="Age Bucket Total Amount Deviation"
+            unit="currency"
+          />
         </section>
       </div>
     </div>
