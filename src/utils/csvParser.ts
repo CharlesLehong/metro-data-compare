@@ -108,3 +108,80 @@ export const getDebtByCashBasis = (data: MunicipalityData[]): Record<string, num
   
   return debts;
 };
+
+export interface AgeBucketData {
+  cashBasis: string;
+  '0-15': number;
+  '16-30': number;
+  '31-60': number;
+  '61-90': number;
+  '90+': number;
+}
+
+export const getAgeBucketCounts = (data: MunicipalityData[]): AgeBucketData[] => {
+  const grouped: Record<string, AgeBucketData> = {};
+  
+  data.forEach(row => {
+    const cashBasis = row.CASH_BASIS_RECOGNISE_REVENUE as string || 'Unknown';
+    
+    if (!grouped[cashBasis]) {
+      grouped[cashBasis] = {
+        cashBasis,
+        '0-15': 0,
+        '16-30': 0,
+        '31-60': 0,
+        '61-90': 0,
+        '90+': 0,
+      };
+    }
+    
+    // Count records in each age bucket based on non-zero values
+    const current = typeof row.CURRENT === 'number' ? row.CURRENT : parseFloat(row.CURRENT as string) || 0;
+    const due16_30 = typeof row.DUE_16_30 === 'number' ? row.DUE_16_30 : parseFloat(row.DUE_16_30 as string) || 0;
+    const due31_60 = typeof row.DUE_31_60 === 'number' ? row.DUE_31_60 : parseFloat(row.DUE_31_60 as string) || 0;
+    const due61_90 = typeof row.DUE_61_90 === 'number' ? row.DUE_61_90 : parseFloat(row.DUE_61_90 as string) || 0;
+    const due91_plus = typeof row.DUE_91_PLUS === 'number' ? row.DUE_91_PLUS : parseFloat(row.DUE_91_PLUS as string) || 0;
+    
+    if (current > 0) grouped[cashBasis]['0-15']++;
+    if (due16_30 > 0) grouped[cashBasis]['16-30']++;
+    if (due31_60 > 0) grouped[cashBasis]['31-60']++;
+    if (due61_90 > 0) grouped[cashBasis]['61-90']++;
+    if (due91_plus > 0) grouped[cashBasis]['90+']++;
+  });
+  
+  return Object.values(grouped);
+};
+
+export const getAgeBucketAmounts = (data: MunicipalityData[]): AgeBucketData[] => {
+  const grouped: Record<string, AgeBucketData> = {};
+  
+  data.forEach(row => {
+    const cashBasis = row.CASH_BASIS_RECOGNISE_REVENUE as string || 'Unknown';
+    
+    if (!grouped[cashBasis]) {
+      grouped[cashBasis] = {
+        cashBasis,
+        '0-15': 0,
+        '16-30': 0,
+        '31-60': 0,
+        '61-90': 0,
+        '90+': 0,
+      };
+    }
+    
+    // Sum amounts in each age bucket
+    const current = typeof row.CURRENT === 'number' ? row.CURRENT : parseFloat(row.CURRENT as string) || 0;
+    const due16_30 = typeof row.DUE_16_30 === 'number' ? row.DUE_16_30 : parseFloat(row.DUE_16_30 as string) || 0;
+    const due31_60 = typeof row.DUE_31_60 === 'number' ? row.DUE_31_60 : parseFloat(row.DUE_31_60 as string) || 0;
+    const due61_90 = typeof row.DUE_61_90 === 'number' ? row.DUE_61_90 : parseFloat(row.DUE_61_90 as string) || 0;
+    const due91_plus = typeof row.DUE_91_PLUS === 'number' ? row.DUE_91_PLUS : parseFloat(row.DUE_91_PLUS as string) || 0;
+    
+    grouped[cashBasis]['0-15'] += current;
+    grouped[cashBasis]['16-30'] += due16_30;
+    grouped[cashBasis]['31-60'] += due31_60;
+    grouped[cashBasis]['61-90'] += due61_90;
+    grouped[cashBasis]['90+'] += due91_plus;
+  });
+  
+  return Object.values(grouped);
+};

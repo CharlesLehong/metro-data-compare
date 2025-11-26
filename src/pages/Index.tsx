@@ -6,6 +6,7 @@ import { MetroDebtDonutChart } from '@/components/MetroDebtDonutChart';
 import { DeviationGauge } from '@/components/DeviationGauge';
 import { CashBasisDonutChart } from '@/components/CashBasisDonutChart';
 import { CashBasisDebtDonutChart } from '@/components/CashBasisDebtDonutChart';
+import { AgeBucketBarChart } from '@/components/AgeBucketBarChart';
 import { 
   parseCSV, 
   getAvailablePeriods, 
@@ -15,9 +16,11 @@ import {
   getDebtByMetro,
   getCashBasisCount,
   getDebtByCashBasis,
+  getAgeBucketCounts,
+  getAgeBucketAmounts,
   type MunicipalityData 
 } from '@/utils/csvParser';
-import { Database, TrendingUp, Building2 } from 'lucide-react';
+import { Database, TrendingUp, Building2, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Index = () => {
@@ -74,6 +77,12 @@ const Index = () => {
 
   const cashBasisDebt1 = getDebtByCashBasis(period1Data);
   const cashBasisDebt2 = getDebtByCashBasis(period2Data);
+
+  const ageBucketCounts1 = getAgeBucketCounts(period1Data);
+  const ageBucketCounts2 = getAgeBucketCounts(period2Data);
+
+  const ageBucketAmounts1 = getAgeBucketAmounts(period1Data);
+  const ageBucketAmounts2 = getAgeBucketAmounts(period2Data);
 
   const formatPeriodLabel = (period: string) => {
     const date = new Date(period);
@@ -232,7 +241,7 @@ const Index = () => {
         </section>
 
         {/* Total Debt by Cash Basis Revenue Recognition */}
-        <section>
+        <section className="mb-8">
           <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
             <TrendingUp className="h-6 w-6 text-primary" />
             Total Debt by Cash Basis Revenue Recognition
@@ -251,6 +260,40 @@ const Index = () => {
               value2={debt2}
               title="Total Debt Deviation"
               unit="currency"
+            />
+          </div>
+        </section>
+
+        {/* Age Bucket Analysis by Cash Basis */}
+        <section>
+          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+            <Calendar className="h-6 w-6 text-primary" />
+            Cash Basis Revenue Recognition by Age Bucket
+          </h2>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <AgeBucketBarChart 
+              data={ageBucketCounts1}
+              title={`Record Count - ${formatPeriodLabel(period1)}`}
+              isAmount={false}
+            />
+            <AgeBucketBarChart 
+              data={ageBucketCounts2}
+              title={`Record Count - ${formatPeriodLabel(period2)}`}
+              isAmount={false}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <AgeBucketBarChart 
+              data={ageBucketAmounts1}
+              title={`Amount (ZAR) - ${formatPeriodLabel(period1)}`}
+              isAmount={true}
+            />
+            <AgeBucketBarChart 
+              data={ageBucketAmounts2}
+              title={`Amount (ZAR) - ${formatPeriodLabel(period2)}`}
+              isAmount={true}
             />
           </div>
         </section>
