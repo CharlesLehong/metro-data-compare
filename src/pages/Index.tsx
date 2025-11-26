@@ -11,12 +11,14 @@ import {
   getMetroCount, 
   getTotalDebt,
   getDebtByMetro,
+  getRevenueByMetro,
   type MunicipalityData 
 } from '@/utils/csvParser';
-import { Database, TrendingUp, Building2, ArrowRight } from 'lucide-react';
+import { Database, TrendingUp, Building2, ArrowRight, DollarSign } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { RevenueByMetroChart } from '@/components/RevenueByMetroChart';
 
 const Index = () => {
   const [data, setData] = useState<MunicipalityData[]>([]);
@@ -66,6 +68,12 @@ const Index = () => {
   
   const totalDebt1 = debt1.metro + debt1.nonMetro;
   const totalDebt2 = debt2.metro + debt2.nonMetro;
+
+  const revenue1 = getRevenueByMetro(period1Data);
+  const revenue2 = getRevenueByMetro(period2Data);
+  
+  const totalRevenue1 = revenue1.metro + revenue1.nonMetro;
+  const totalRevenue2 = revenue2.metro + revenue2.nonMetro;
 
   const formatPeriodLabel = (period: string) => {
     const date = new Date(period);
@@ -182,7 +190,7 @@ const Index = () => {
         </section>
 
         {/* Total Debt Analysis */}
-        <section>
+        <section className="mb-8">
           <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
             <TrendingUp className="h-6 w-6 text-primary" />
             Total Debt by Metro Status
@@ -202,6 +210,32 @@ const Index = () => {
               value1={totalDebt1}
               value2={totalDebt2}
               title="Total Debt Deviation"
+              unit="currency"
+            />
+          </div>
+        </section>
+
+        {/* Revenue Analysis */}
+        <section>
+          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+            <DollarSign className="h-6 w-6 text-primary" />
+            Cash Basis Revenue Recognition by Metro Status
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <RevenueByMetroChart 
+              metro={revenue1.metro}
+              nonMetro={revenue1.nonMetro}
+              title={formatPeriodLabel(period1)}
+            />
+            <RevenueByMetroChart 
+              metro={revenue2.metro}
+              nonMetro={revenue2.nonMetro}
+              title={formatPeriodLabel(period2)}
+            />
+            <DeviationGauge 
+              value1={totalRevenue1}
+              value2={totalRevenue2}
+              title="Total Revenue Deviation"
               unit="currency"
             />
           </div>
