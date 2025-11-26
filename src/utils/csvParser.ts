@@ -86,3 +86,31 @@ export const getDebtByMetro = (data: MunicipalityData[]): { metro: number; nonMe
   
   return { metro, nonMetro };
 };
+
+export const getRevenueByMetro = (data: MunicipalityData[]): { metro: number; nonMetro: number } => {
+  let metro = 0;
+  let nonMetro = 0;
+  
+  data.forEach(row => {
+    const revenue = typeof row.CASH_BASIS_RECOGNISE_REVENUE === 'number' 
+      ? row.CASH_BASIS_RECOGNISE_REVENUE 
+      : parseFloat(row.CASH_BASIS_RECOGNISE_REVENUE as string) || 0;
+    
+    if (row.METRO === 'Metro') {
+      metro += revenue;
+    } else {
+      nonMetro += revenue;
+    }
+  });
+  
+  return { metro, nonMetro };
+};
+
+export const getTotalRevenue = (data: MunicipalityData[]): number => {
+  return data.reduce((sum, row) => {
+    const revenue = typeof row.CASH_BASIS_RECOGNISE_REVENUE === 'number' 
+      ? row.CASH_BASIS_RECOGNISE_REVENUE 
+      : parseFloat(row.CASH_BASIS_RECOGNISE_REVENUE as string) || 0;
+    return sum + revenue;
+  }, 0);
+};

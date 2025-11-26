@@ -2,23 +2,22 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MetroDonutChart } from '@/components/MetroDonutChart';
-import { DebtByMetroChart } from '@/components/DebtByMetroChart';
 import { DeviationGauge } from '@/components/DeviationGauge';
 import { 
   parseCSV, 
   getAvailablePeriods, 
   filterByPeriod, 
   getMetroCount, 
-  getTotalDebt,
-  getDebtByMetro,
+  getRevenueByMetro,
   type MunicipalityData 
 } from '@/utils/csvParser';
-import { Database, TrendingUp, Building2, ArrowRight } from 'lucide-react';
+import { DollarSign, TrendingUp, Building2, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { RevenueByMetroChart } from '@/components/RevenueByMetroChart';
 
-const Index = () => {
+const Revenue = () => {
   const [data, setData] = useState<MunicipalityData[]>([]);
   const [periods, setPeriods] = useState<string[]>([]);
   const [period1, setPeriod1] = useState<string>('');
@@ -39,7 +38,7 @@ const Index = () => {
           setPeriod2(availablePeriods[0]); // Most recent
         }
         
-        toast.success('Data loaded successfully', {
+        toast.success('Revenue data loaded successfully', {
           description: `${parsedData.length.toLocaleString()} records loaded`,
         });
       } catch (error) {
@@ -61,11 +60,11 @@ const Index = () => {
   const metro1 = getMetroCount(period1Data);
   const metro2 = getMetroCount(period2Data);
 
-  const debt1 = getDebtByMetro(period1Data);
-  const debt2 = getDebtByMetro(period2Data);
+  const revenue1 = getRevenueByMetro(period1Data);
+  const revenue2 = getRevenueByMetro(period2Data);
   
-  const totalDebt1 = debt1.metro + debt1.nonMetro;
-  const totalDebt2 = debt2.metro + debt2.nonMetro;
+  const totalRevenue1 = revenue1.metro + revenue1.nonMetro;
+  const totalRevenue2 = revenue2.metro + revenue2.nonMetro;
 
   const formatPeriodLabel = (period: string) => {
     const date = new Date(period);
@@ -76,8 +75,8 @@ const Index = () => {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="text-center space-y-4">
-          <Database className="h-16 w-16 text-primary mx-auto animate-pulse" />
-          <p className="text-lg text-muted-foreground">Loading municipality data...</p>
+          <DollarSign className="h-16 w-16 text-primary mx-auto animate-pulse" />
+          <p className="text-lg text-muted-foreground">Loading revenue data...</p>
         </div>
       </div>
     );
@@ -88,20 +87,18 @@ const Index = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <header className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <Database className="h-10 w-10 text-primary" />
-              <h1 className="text-4xl font-bold text-foreground">Debt Analytics Dashboard</h1>
-            </div>
-            <Link to="/revenue">
-              <Button variant="default">
-                Revenue Analysis
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </Link>
+          <Link to="/">
+            <Button variant="ghost" className="mb-4">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Debt Analysis
+            </Button>
+          </Link>
+          <div className="flex items-center gap-3 mb-2">
+            <DollarSign className="h-10 w-10 text-primary" />
+            <h1 className="text-4xl font-bold text-foreground">Revenue Analytics Dashboard</h1>
           </div>
           <p className="text-muted-foreground">
-            Compare Eskom municipality debt data across different time periods
+            Compare cash basis revenue recognition across different time periods
           </p>
         </header>
 
@@ -181,27 +178,27 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Total Debt Analysis */}
+        {/* Total Revenue Analysis */}
         <section>
           <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
             <TrendingUp className="h-6 w-6 text-primary" />
-            Total Debt by Metro Status
+            Total Revenue by Metro Status
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <DebtByMetroChart 
-              metro={debt1.metro}
-              nonMetro={debt1.nonMetro}
+            <RevenueByMetroChart 
+              metro={revenue1.metro}
+              nonMetro={revenue1.nonMetro}
               title={formatPeriodLabel(period1)}
             />
-            <DebtByMetroChart 
-              metro={debt2.metro}
-              nonMetro={debt2.nonMetro}
+            <RevenueByMetroChart 
+              metro={revenue2.metro}
+              nonMetro={revenue2.nonMetro}
               title={formatPeriodLabel(period2)}
             />
             <DeviationGauge 
-              value1={totalDebt1}
-              value2={totalDebt2}
-              title="Total Debt Deviation"
+              value1={totalRevenue1}
+              value2={totalRevenue2}
+              title="Total Revenue Deviation"
               unit="currency"
             />
           </div>
@@ -211,4 +208,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default Revenue;
