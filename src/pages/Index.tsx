@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MetroDonutChart } from '@/components/MetroDonutChart';
-import { DebtDonutChart } from '@/components/DebtDonutChart';
+import { MetroDebtDonutChart } from '@/components/MetroDebtDonutChart';
 import { DeviationGauge } from '@/components/DeviationGauge';
 import { CashBasisDonutChart } from '@/components/CashBasisDonutChart';
 import { 
@@ -11,6 +11,7 @@ import {
   filterByPeriod, 
   getMetroCount, 
   getTotalDebt,
+  getDebtByMetro,
   getCashBasisCount,
   type MunicipalityData 
 } from '@/utils/csvParser';
@@ -62,6 +63,9 @@ const Index = () => {
 
   const debt1 = getTotalDebt(period1Data);
   const debt2 = getTotalDebt(period2Data);
+
+  const metroDebt1 = getDebtByMetro(period1Data);
+  const metroDebt2 = getDebtByMetro(period2Data);
 
   const cashBasis1 = getCashBasisCount(period1Data);
   const cashBasis2 = getCashBasisCount(period2Data);
@@ -176,18 +180,18 @@ const Index = () => {
         <section className="mb-8">
           <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
             <TrendingUp className="h-6 w-6 text-primary" />
-            Total Debt Analysis
+            Total Debt Analysis by Metro Status
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <DebtDonutChart 
-              amount={debt1} 
+            <MetroDebtDonutChart 
+              metro={metroDebt1.metro}
+              nonMetro={metroDebt1.nonMetro}
               title={formatPeriodLabel(period1)}
-              color="hsl(var(--chart-3))"
             />
-            <DebtDonutChart 
-              amount={debt2} 
+            <MetroDebtDonutChart 
+              metro={metroDebt2.metro}
+              nonMetro={metroDebt2.nonMetro}
               title={formatPeriodLabel(period2)}
-              color="hsl(var(--chart-4))"
             />
             <DeviationGauge 
               value1={debt1}
