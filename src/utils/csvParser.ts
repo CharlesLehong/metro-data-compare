@@ -138,3 +138,38 @@ export const getMetricsByPeriod = (data: MunicipalityData[]): PeriodMetrics[] =>
     };
   }).reverse(); // Reverse to show chronological order
 };
+
+export interface RevenueBreakdown {
+  cashBasisCount: number;
+  recognisedRevenueCount: number;
+  cashBasisAmount: number;
+  recognisedRevenueAmount: number;
+}
+
+export const getRevenueBreakdown = (data: MunicipalityData[]): RevenueBreakdown => {
+  let cashBasisCount = 0;
+  let recognisedRevenueCount = 0;
+  let cashBasisAmount = 0;
+  let recognisedRevenueAmount = 0;
+
+  data.forEach(row => {
+    const debt = row.TOT_DEBT || 0;
+    const revenueType = String(row.CASH_BASIS_RECOGNISE_REVENUE || '').trim();
+    
+    // Check if the row is Cash Basis or Recognised Revenue based on the column value
+    if (revenueType === 'Cash Basis') {
+      cashBasisCount++;
+      cashBasisAmount += debt;
+    } else if (revenueType === 'Recognise Revenue') {
+      recognisedRevenueCount++;
+      recognisedRevenueAmount += debt;
+    }
+  });
+
+  return {
+    cashBasisCount,
+    recognisedRevenueCount,
+    cashBasisAmount,
+    recognisedRevenueAmount,
+  };
+};
