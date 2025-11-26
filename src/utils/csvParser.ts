@@ -114,3 +114,27 @@ export const getTotalRevenue = (data: MunicipalityData[]): number => {
     return sum + revenue;
   }, 0);
 };
+
+export interface PeriodMetrics {
+  period: string;
+  count: number;
+  totalDebt: number;
+  totalRevenue: number;
+}
+
+export const getMetricsByPeriod = (data: MunicipalityData[]): PeriodMetrics[] => {
+  const periods = getAvailablePeriods(data);
+  
+  return periods.map(period => {
+    const periodData = filterByPeriod(data, period);
+    const totalDebt = getTotalDebt(periodData);
+    const totalRevenue = getTotalRevenue(periodData);
+    
+    return {
+      period,
+      count: periodData.length,
+      totalDebt,
+      totalRevenue,
+    };
+  }).reverse(); // Reverse to show chronological order
+};
