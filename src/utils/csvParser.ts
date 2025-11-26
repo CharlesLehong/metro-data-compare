@@ -71,3 +71,18 @@ export const getMetroCount = (data: MunicipalityData[]): { metro: number; nonMet
 export const getTotalDebt = (data: MunicipalityData[]): number => {
   return data.reduce((sum, row) => sum + (row.TOT_DEBT || 0), 0);
 };
+
+export const getDebtByMetro = (data: MunicipalityData[]): { metro: number; nonMetro: number } => {
+  let metro = 0;
+  let nonMetro = 0;
+  
+  data.forEach(row => {
+    if (row.METRO === 'Metro') {
+      metro += row.TOT_DEBT || 0;
+    } else {
+      nonMetro += row.TOT_DEBT || 0;
+    }
+  });
+  
+  return { metro, nonMetro };
+};

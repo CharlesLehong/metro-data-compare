@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MetroDonutChart } from '@/components/MetroDonutChart';
-import { DebtDonutChart } from '@/components/DebtDonutChart';
+import { DebtByMetroChart } from '@/components/DebtByMetroChart';
 import { DeviationGauge } from '@/components/DeviationGauge';
 import { 
   parseCSV, 
@@ -10,6 +10,7 @@ import {
   filterByPeriod, 
   getMetroCount, 
   getTotalDebt,
+  getDebtByMetro,
   type MunicipalityData 
 } from '@/utils/csvParser';
 import { Database, TrendingUp, Building2 } from 'lucide-react';
@@ -58,8 +59,11 @@ const Index = () => {
   const metro1 = getMetroCount(period1Data);
   const metro2 = getMetroCount(period2Data);
 
-  const debt1 = getTotalDebt(period1Data);
-  const debt2 = getTotalDebt(period2Data);
+  const debt1 = getDebtByMetro(period1Data);
+  const debt2 = getDebtByMetro(period2Data);
+  
+  const totalDebt1 = debt1.metro + debt1.nonMetro;
+  const totalDebt2 = debt2.metro + debt2.nonMetro;
 
   const formatPeriodLabel = (period: string) => {
     const date = new Date(period);
@@ -171,22 +175,22 @@ const Index = () => {
         <section>
           <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
             <TrendingUp className="h-6 w-6 text-primary" />
-            Total Debt Analysis
+            Total Debt by Metro Status
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <DebtDonutChart 
-              amount={debt1} 
+            <DebtByMetroChart 
+              metro={debt1.metro}
+              nonMetro={debt1.nonMetro}
               title={formatPeriodLabel(period1)}
-              color="hsl(var(--chart-3))"
             />
-            <DebtDonutChart 
-              amount={debt2} 
+            <DebtByMetroChart 
+              metro={debt2.metro}
+              nonMetro={debt2.nonMetro}
               title={formatPeriodLabel(period2)}
-              color="hsl(var(--chart-4))"
             />
             <DeviationGauge 
-              value1={debt1}
-              value2={debt2}
+              value1={totalDebt1}
+              value2={totalDebt2}
               title="Total Debt Deviation"
               unit="currency"
             />
