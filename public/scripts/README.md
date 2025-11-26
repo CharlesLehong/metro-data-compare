@@ -1,6 +1,11 @@
-# Municipality Data Analysis - Python Script
+# Municipality Data Analysis - Python Scripts
 
-This Python script performs the same analysis as the web dashboard, comparing Eskom municipality data across two time periods.
+This directory contains Python scripts and a Jupyter Notebook that perform the same analysis as the web dashboard, comparing Eskom municipality data across two time periods.
+
+## Files
+
+- `municipality_analysis.py` - Standalone Python script
+- `municipality_analysis.ipynb` - Interactive Jupyter Notebook version
 
 ## Requirements
 
