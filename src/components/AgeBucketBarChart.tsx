@@ -8,12 +8,13 @@ interface AgeBucketBarChartProps {
   isAmount?: boolean;
 }
 
+// Colors representing debt aging quality: Green (great) → Red (worse)
 const COLORS = {
-  '0-15': 'hsl(var(--chart-1))',
-  '16-30': 'hsl(var(--chart-2))',
-  '31-60': 'hsl(var(--chart-3))',
-  '61-90': 'hsl(var(--chart-4))',
-  '90+': 'hsl(var(--chart-5))',
+  '0-15': '#22c55e',   // Green - Great (0-15 days)
+  '16-30': '#84cc16',  // Light Green - Good (16-30 days)
+  '31-60': '#eab308',  // Yellow/Orange - Not Good (31-60 days)
+  '61-90': '#f97316',  // Orange - Bad (61-90 days)
+  '90+': '#ef4444',    // Red - Worse (90+ days)
 };
 
 export const AgeBucketBarChart = ({ data, title, isAmount = false }: AgeBucketBarChartProps) => {

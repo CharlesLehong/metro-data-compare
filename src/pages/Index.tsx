@@ -7,24 +7,24 @@ import { DeviationGauge } from '@/components/DeviationGauge';
 import { CashBasisDonutChart } from '@/components/CashBasisDonutChart';
 import { CashBasisDebtDonutChart } from '@/components/CashBasisDebtDonutChart';
 import { AgeBucketBarChart } from '@/components/AgeBucketBarChart';
-import { 
-  parseCSV, 
-  getAvailablePeriods, 
-  filterByPeriod, 
-  getMetroCount, 
+import {
+  fetchApiData,
+  getAvailablePeriods,
+  filterByPeriod,
+  getMetroCount,
   getTotalDebt,
   getDebtByMetro,
   getCashBasisCount,
   getDebtByCashBasis,
   getAgeBucketCounts,
   getAgeBucketAmounts,
-  type MunicipalityData 
+  type ApiResponseData
 } from '@/utils/csvParser';
 import { Database, TrendingUp, Building2, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Index = () => {
-  const [data, setData] = useState<MunicipalityData[]>([]);
+  const [data, setData] = useState<ApiResponseData[]>([]);
   const [periods, setPeriods] = useState<string[]>([]);
   const [period1, setPeriod1] = useState<string>('');
   const [period2, setPeriod2] = useState<string>('');
@@ -33,30 +33,30 @@ const Index = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const parsedData = await parseCSV();
-        setData(parsedData);
-        
-        const availablePeriods = getAvailablePeriods(parsedData);
+        const apiData = await fetchApiData();
+        setData(apiData);
+
+        const availablePeriods = getAvailablePeriods(apiData);
         setPeriods(availablePeriods);
-        
+
         if (availablePeriods.length >= 2) {
           setPeriod1(availablePeriods[1]); // Second most recent
           setPeriod2(availablePeriods[0]); // Most recent
         }
-        
+
         toast.success('Data loaded successfully', {
-          description: `${parsedData.length.toLocaleString()} records loaded`,
+          description: `${apiData.length.toLocaleString()} records loaded from API`,
         });
       } catch (error) {
         console.error('Error loading data:', error);
         toast.error('Failed to load data', {
-          description: 'Please check the data file',
+          description: 'Please check the API connection',
         });
       } finally {
         setLoading(false);
       }
     };
-    
+
     loadData();
   }, []);
 
@@ -75,6 +75,10 @@ const Index = () => {
   const cashBasis1 = getCashBasisCount(period1Data);
   const cashBasis2 = getCashBasisCount(period2Data);
 
+  // Calculate total record counts from cash basis data
+  const totalRecordCount1 = Object.values(cashBasis1).reduce((sum, count) => sum + count, 0);
+  const totalRecordCount2 = Object.values(cashBasis2).reduce((sum, count) => sum + count, 0);
+
   const cashBasisDebt1 = getDebtByCashBasis(period1Data);
   const cashBasisDebt2 = getDebtByCashBasis(period2Data);
 
@@ -91,27 +95,39 @@ const Index = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
+      <div className="flex items-center justify-center min-h-screen" style={{
+        background: 'linear-gradient(135deg, #008CBA 0%, #00A86B 50%, #0073A5 100%)'
+      }}>
         <div className="text-center space-y-4">
-          <Database className="h-16 w-16 text-primary mx-auto animate-pulse" />
-          <p className="text-lg text-muted-foreground">Loading municipality data...</p>
+          <Database className="h-16 w-16 text-white mx-auto animate-pulse" />
+          <p className="text-lg text-white">Loading municipality data...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen" style={{
+      background: 'linear-gradient(135deg, #008CBA 0%, #00A86B 50%, #0073A5 100%)'
+    }}>
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <header className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Database className="h-10 w-10 text-primary" />
-            <h1 className="text-4xl font-bold text-foreground">Municipality Analytics Dashboard</h1>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <Database className="h-10 w-10 text-white" />
+              <div>
+                <h1 className="text-4xl font-bold text-white">Municipality Analytics Dashboard</h1>
+              </div>
+            </div>
+            <div className="flex-shrink-0">
+              <img
+                src="https://www.eskom.co.za/wp-content/uploads/2024/02/Eskom-logo-white.gif"
+                alt="Eskom Logo"
+                className="h-20 w-auto object-contain"
+              />
+            </div>
           </div>
-          <p className="text-muted-foreground">
-            Compare Eskom municipality data across different time periods
-          </p>
         </header>
 
         {/* Period Selectors */}
@@ -227,13 +243,13 @@ const Index = () => {
               counts={cashBasis1} 
               title={formatPeriodLabel(period1)}
             />
-            <CashBasisDonutChart 
-              counts={cashBasis2} 
+            <CashBasisDonutChart
+              counts={cashBasis2}
               title={formatPeriodLabel(period2)}
             />
-            <DeviationGauge 
-              value1={period1Data.length}
-              value2={period2Data.length}
+            <DeviationGauge
+              value1={totalRecordCount1}
+              value2={totalRecordCount2}
               title="Record Count Deviation"
               unit="count"
             />
@@ -264,52 +280,102 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Age Bucket Analysis by Cash Basis */}
-        <section>
+        {/* Age Bucket Analysis - CASH BASIS */}
+        <section className="mb-8">
           <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
             <Calendar className="h-6 w-6 text-primary" />
-            Cash Basis Revenue Recognition by Age Bucket
+            CASH BASIS by Age Bucket
           </h2>
-          
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <AgeBucketBarChart 
-              data={ageBucketCounts1}
+            <AgeBucketBarChart
+              data={ageBucketCounts1.filter(item => item.cashBasis === 'CASH BASIS')}
               title={`Record Count - ${formatPeriodLabel(period1)}`}
               isAmount={false}
             />
-            <AgeBucketBarChart 
-              data={ageBucketCounts2}
+            <AgeBucketBarChart
+              data={ageBucketCounts2.filter(item => item.cashBasis === 'CASH BASIS')}
               title={`Record Count - ${formatPeriodLabel(period2)}`}
               isAmount={false}
             />
           </div>
 
           <div className="mb-6">
-            <DeviationGauge 
-              value1={ageBucketCounts1.reduce((sum, item) => sum + item['0-15'] + item['16-30'] + item['31-60'] + item['61-90'] + item['90+'], 0)}
-              value2={ageBucketCounts2.reduce((sum, item) => sum + item['0-15'] + item['16-30'] + item['31-60'] + item['61-90'] + item['90+'], 0)}
-              title="Age Bucket Record Count Deviation"
+            <DeviationGauge
+              value1={ageBucketCounts1.filter(item => item.cashBasis === 'CASH BASIS').reduce((sum, item) => sum + item['0-15'] + item['16-30'] + item['31-60'] + item['61-90'] + item['90+'], 0)}
+              value2={ageBucketCounts2.filter(item => item.cashBasis === 'CASH BASIS').reduce((sum, item) => sum + item['0-15'] + item['16-30'] + item['31-60'] + item['61-90'] + item['90+'], 0)}
+              title="CASH BASIS Record Count Deviation"
               unit="count"
             />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <AgeBucketBarChart 
-              data={ageBucketAmounts1}
+            <AgeBucketBarChart
+              data={ageBucketAmounts1.filter(item => item.cashBasis === 'CASH BASIS')}
               title={`Amount (ZAR) - ${formatPeriodLabel(period1)}`}
               isAmount={true}
             />
-            <AgeBucketBarChart 
-              data={ageBucketAmounts2}
+            <AgeBucketBarChart
+              data={ageBucketAmounts2.filter(item => item.cashBasis === 'CASH BASIS')}
               title={`Amount (ZAR) - ${formatPeriodLabel(period2)}`}
               isAmount={true}
             />
           </div>
 
-          <DeviationGauge 
-            value1={ageBucketAmounts1.reduce((sum, item) => sum + item['0-15'] + item['16-30'] + item['31-60'] + item['61-90'] + item['90+'], 0)}
-            value2={ageBucketAmounts2.reduce((sum, item) => sum + item['0-15'] + item['16-30'] + item['31-60'] + item['61-90'] + item['90+'], 0)}
-            title="Age Bucket Total Amount Deviation"
+          <DeviationGauge
+            value1={ageBucketAmounts1.filter(item => item.cashBasis === 'CASH BASIS').reduce((sum, item) => sum + item['0-15'] + item['16-30'] + item['31-60'] + item['61-90'] + item['90+'], 0)}
+            value2={ageBucketAmounts2.filter(item => item.cashBasis === 'CASH BASIS').reduce((sum, item) => sum + item['0-15'] + item['16-30'] + item['31-60'] + item['61-90'] + item['90+'], 0)}
+            title="CASH BASIS Total Amount Deviation"
+            unit="currency"
+          />
+        </section>
+
+        {/* Age Bucket Analysis - Recognise Revenue */}
+        <section>
+          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+            <Calendar className="h-6 w-6 text-primary" />
+            Recognise Revenue by Age Bucket
+          </h2>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <AgeBucketBarChart
+              data={ageBucketCounts1.filter(item => item.cashBasis === 'Recognise Revenue')}
+              title={`Record Count - ${formatPeriodLabel(period1)}`}
+              isAmount={false}
+            />
+            <AgeBucketBarChart
+              data={ageBucketCounts2.filter(item => item.cashBasis === 'Recognise Revenue')}
+              title={`Record Count - ${formatPeriodLabel(period2)}`}
+              isAmount={false}
+            />
+          </div>
+
+          <div className="mb-6">
+            <DeviationGauge
+              value1={ageBucketCounts1.filter(item => item.cashBasis === 'Recognise Revenue').reduce((sum, item) => sum + item['0-15'] + item['16-30'] + item['31-60'] + item['61-90'] + item['90+'], 0)}
+              value2={ageBucketCounts2.filter(item => item.cashBasis === 'Recognise Revenue').reduce((sum, item) => sum + item['0-15'] + item['16-30'] + item['31-60'] + item['61-90'] + item['90+'], 0)}
+              title="Recognise Revenue Record Count Deviation"
+              unit="count"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <AgeBucketBarChart
+              data={ageBucketAmounts1.filter(item => item.cashBasis === 'Recognise Revenue')}
+              title={`Amount (ZAR) - ${formatPeriodLabel(period1)}`}
+              isAmount={true}
+            />
+            <AgeBucketBarChart
+              data={ageBucketAmounts2.filter(item => item.cashBasis === 'Recognise Revenue')}
+              title={`Amount (ZAR) - ${formatPeriodLabel(period2)}`}
+              isAmount={true}
+            />
+          </div>
+
+          <DeviationGauge
+            value1={ageBucketAmounts1.filter(item => item.cashBasis === 'Recognise Revenue').reduce((sum, item) => sum + item['0-15'] + item['16-30'] + item['31-60'] + item['61-90'] + item['90+'], 0)}
+            value2={ageBucketAmounts2.filter(item => item.cashBasis === 'Recognise Revenue').reduce((sum, item) => sum + item['0-15'] + item['16-30'] + item['31-60'] + item['61-90'] + item['90+'], 0)}
+            title="Recognise Revenue Total Amount Deviation"
             unit="currency"
           />
         </section>

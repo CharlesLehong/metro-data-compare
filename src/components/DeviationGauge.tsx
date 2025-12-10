@@ -28,14 +28,14 @@ export const DeviationGauge = ({ value1, value2, title, unit = 'count' }: Deviat
   };
 
   const getColorClass = () => {
-    if (isPositive) return 'text-destructive';
-    if (isNegative) return 'text-success';
+    if (isPositive) return 'text-success'; // Increase = Green (Good)
+    if (isNegative) return 'text-destructive'; // Decrease = Red (Bad)
     return 'text-muted-foreground';
   };
 
   const getBackgroundClass = () => {
-    if (isPositive) return 'bg-destructive/10';
-    if (isNegative) return 'bg-success/10';
+    if (isPositive) return 'bg-success/10'; // Increase = Green background
+    if (isNegative) return 'bg-destructive/10'; // Decrease = Red background
     return 'bg-muted';
   };
 

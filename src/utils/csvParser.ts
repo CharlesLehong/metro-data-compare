@@ -1,118 +1,135 @@
-export interface MunicipalityData {
-  MONTH: string;
-  FINANCIAL_YEAR: string;
-  PERIOD: string;
-  METRO: string;
-  TOT_DEBT: number;
-  COMMON_ENTITY_NAME: string;
-  [key: string]: string | number;
+// API Response Interface matching the Azure Functions endpoint
+export interface ApiResponseData {
+  month: string;
+  classification: string; // "CASH BASIS" or "Recognise Revenue"
+  current: number;
+  due_16_30: number;
+  due_31_60: number;
+  due_61_90: number;
+  due_91_plus: number;
+  count: number;
+  area_type: string; // "Metro" or "Non-Metro"
 }
 
-// Azure Blob Storage SAS URL
-const AZURE_BLOB_URL = "https://bootsurewebapptest.blob.core.windows.net/eskom-bi/NERSA.csv?sp=r&st=2025-11-26T09:45:39Z&se=2025-11-27T18:00:39Z&spr=https&sv=2024-11-04&sr=b&sig=wWYCyMxZSxdAZB4oBD4RKJj4K0KwpSrEUHBStXjI9E8%3D";
+// Azure Functions API Configuration
+// Use relative URL in development to leverage Vite proxy, full URL in production
+const isDevelopment = import.meta.env.DEV;
+const AZURE_FUNCTION_URL = isDevelopment
+  ? "/api/FN_MUNIC_DASHBOARD_DATA_v1?code=amz8NLiXGUuCpxrQ3c5Sbd4SvGK4h1sgZtOsm-mwKVeJAzFuPz54OQ=="
+  : "https://bootsure-functions-dev-py.azurewebsites.net/api/FN_MUNIC_DASHBOARD_DATA_v1?code=amz8NLiXGUuCpxrQ3c5Sbd4SvGK4h1sgZtOsm-mwKVeJAzFuPz54OQ==";
 
-export const parseCSV = async (filePath?: string): Promise<MunicipalityData[]> => {
-  const url = filePath || AZURE_BLOB_URL;
-  const response = await fetch(url);
-  const text = await response.text();
-  
-  const lines = text.split('\n');
-  const headers = lines[0].replace('﻿', '').split(',');
-  
-  const data: MunicipalityData[] = [];
-  
-  for (let i = 1; i < lines.length; i++) {
-    if (!lines[i].trim()) continue;
-    
-    const values = lines[i].split(',');
-    const row: any = {};
-    
-    headers.forEach((header, index) => {
-      const value = values[index]?.trim();
-      row[header] = value;
-      
-      // Convert numeric fields
-      if (header === 'TOT_DEBT' || header === 'PERIOD' || header === 'FINANCIAL_YEAR') {
-        row[header] = parseFloat(value) || 0;
-      }
-    });
-    
-    data.push(row);
+const API_HEADERS = {
+  'Content-Type': 'application/json',
+  'bootsure-organization-id': '78a3bcc6-f906-4dd6-9988-89c00b716cd0',
+  'bootsure-api-id': 'b1ca01f6-fe18-4339-a2ed-732d6eee68fb',
+  'bootsure-environment-id': 'UAT',
+};
+
+const API_PAYLOAD = {
+  masterDataLookupEndpoint: "https://bootsure-api-test.azurewebsites.net/",
+  effectiveDate: "2025-10-10",
+  input: null
+};
+
+// Fetch data from Azure Functions API
+export const fetchApiData = async (): Promise<ApiResponseData[]> => {
+  const response = await fetch(AZURE_FUNCTION_URL, {
+    method: 'POST',
+    headers: API_HEADERS,
+    body: JSON.stringify(API_PAYLOAD),
+  });
+
+  if (!response.ok) {
+    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
   }
-  
+
+  const data: ApiResponseData[] = await response.json();
   return data;
 };
 
-export const getAvailablePeriods = (data: MunicipalityData[]): string[] => {
+// Get available periods (unique months) from API data
+export const getAvailablePeriods = (data: ApiResponseData[]): string[] => {
   const periods = new Set<string>();
   data.forEach(row => {
-    if (row.MONTH) {
-      periods.add(row.MONTH);
+    if (row.month) {
+      periods.add(row.month);
     }
   });
   return Array.from(periods).sort().reverse();
 };
 
-export const filterByPeriod = (data: MunicipalityData[], period: string): MunicipalityData[] => {
-  return data.filter(row => row.MONTH === period);
+// Filter data by specific period
+export const filterByPeriod = (data: ApiResponseData[], period: string): ApiResponseData[] => {
+  return data.filter(row => row.month === period);
 };
 
-export const getMetroCount = (data: MunicipalityData[]): { metro: number; nonMetro: number } => {
+// Get Metro vs Non-Metro counts
+export const getMetroCount = (data: ApiResponseData[]): { metro: number; nonMetro: number } => {
   let metro = 0;
   let nonMetro = 0;
-  
+
   data.forEach(row => {
-    if (row.METRO === 'Metro') {
-      metro++;
+    if (row.area_type === 'Metro') {
+      metro += row.count;
     } else {
-      nonMetro++;
+      nonMetro += row.count;
     }
   });
-  
+
   return { metro, nonMetro };
 };
 
-export const getTotalDebt = (data: MunicipalityData[]): number => {
-  return data.reduce((sum, row) => sum + (row.TOT_DEBT || 0), 0);
+// Calculate total debt for a period
+export const getTotalDebt = (data: ApiResponseData[]): number => {
+  return data.reduce((sum, row) => {
+    return sum + row.current + row.due_16_30 + row.due_31_60 + row.due_61_90 + row.due_91_plus;
+  }, 0);
 };
 
-export const getDebtByMetro = (data: MunicipalityData[]): { metro: number; nonMetro: number } => {
+// Get debt totals by Metro status
+export const getDebtByMetro = (data: ApiResponseData[]): { metro: number; nonMetro: number } => {
   let metro = 0;
   let nonMetro = 0;
-  
+
   data.forEach(row => {
-    if (row.METRO === 'Metro') {
-      metro += row.TOT_DEBT || 0;
+    const totalDebt = row.current + row.due_16_30 + row.due_31_60 + row.due_61_90 + row.due_91_plus;
+
+    if (row.area_type === 'Metro') {
+      metro += totalDebt;
     } else {
-      nonMetro += row.TOT_DEBT || 0;
+      nonMetro += totalDebt;
     }
   });
-  
+
   return { metro, nonMetro };
 };
 
-export const getCashBasisCount = (data: MunicipalityData[]): Record<string, number> => {
+// Get record counts by Cash Basis classification
+export const getCashBasisCount = (data: ApiResponseData[]): Record<string, number> => {
   const counts: Record<string, number> = {};
-  
+
   data.forEach(row => {
-    const value = row.CASH_BASIS_RECOGNISE_REVENUE as string || 'Unknown';
-    counts[value] = (counts[value] || 0) + 1;
+    const classification = row.classification || 'Unknown';
+    counts[classification] = (counts[classification] || 0) + row.count;
   });
-  
+
   return counts;
 };
 
-export const getDebtByCashBasis = (data: MunicipalityData[]): Record<string, number> => {
+// Get debt totals by Cash Basis classification
+export const getDebtByCashBasis = (data: ApiResponseData[]): Record<string, number> => {
   const debts: Record<string, number> = {};
-  
+
   data.forEach(row => {
-    const value = row.CASH_BASIS_RECOGNISE_REVENUE as string || 'Unknown';
-    debts[value] = (debts[value] || 0) + (row.TOT_DEBT || 0);
+    const classification = row.classification || 'Unknown';
+    const totalDebt = row.current + row.due_16_30 + row.due_31_60 + row.due_61_90 + row.due_91_plus;
+    debts[classification] = (debts[classification] || 0) + totalDebt;
   });
-  
+
   return debts;
 };
 
+// Age bucket data structure for charts
 export interface AgeBucketData {
   cashBasis: string;
   '0-15': number;
@@ -122,12 +139,13 @@ export interface AgeBucketData {
   '90+': number;
 }
 
-export const getAgeBucketCounts = (data: MunicipalityData[]): AgeBucketData[] => {
+// Get age bucket counts grouped by cash basis classification
+export const getAgeBucketCounts = (data: ApiResponseData[]): AgeBucketData[] => {
   const grouped: Record<string, AgeBucketData> = {};
-  
+
   data.forEach(row => {
-    const cashBasis = row.CASH_BASIS_RECOGNISE_REVENUE as string || 'Unknown';
-    
+    const cashBasis = row.classification || 'Unknown';
+
     if (!grouped[cashBasis]) {
       grouped[cashBasis] = {
         cashBasis,
@@ -138,30 +156,26 @@ export const getAgeBucketCounts = (data: MunicipalityData[]): AgeBucketData[] =>
         '90+': 0,
       };
     }
-    
-    // Count records in each age bucket based on non-zero values
-    const current = typeof row.CURRENT === 'number' ? row.CURRENT : parseFloat(row.CURRENT as string) || 0;
-    const due16_30 = typeof row.DUE_16_30 === 'number' ? row.DUE_16_30 : parseFloat(row.DUE_16_30 as string) || 0;
-    const due31_60 = typeof row.DUE_31_60 === 'number' ? row.DUE_31_60 : parseFloat(row.DUE_31_60 as string) || 0;
-    const due61_90 = typeof row.DUE_61_90 === 'number' ? row.DUE_61_90 : parseFloat(row.DUE_61_90 as string) || 0;
-    const due91_plus = typeof row.DUE_91_PLUS === 'number' ? row.DUE_91_PLUS : parseFloat(row.DUE_91_PLUS as string) || 0;
-    
-    if (current > 0) grouped[cashBasis]['0-15']++;
-    if (due16_30 > 0) grouped[cashBasis]['16-30']++;
-    if (due31_60 > 0) grouped[cashBasis]['31-60']++;
-    if (due61_90 > 0) grouped[cashBasis]['61-90']++;
-    if (due91_plus > 0) grouped[cashBasis]['90+']++;
+
+    // Count records in each bucket (the count field represents records)
+    // We distribute the count across buckets where amounts are non-zero
+    if (row.current > 0) grouped[cashBasis]['0-15'] += row.count;
+    if (row.due_16_30 > 0) grouped[cashBasis]['16-30'] += row.count;
+    if (row.due_31_60 > 0) grouped[cashBasis]['31-60'] += row.count;
+    if (row.due_61_90 > 0) grouped[cashBasis]['61-90'] += row.count;
+    if (row.due_91_plus > 0) grouped[cashBasis]['90+'] += row.count;
   });
-  
+
   return Object.values(grouped);
 };
 
-export const getAgeBucketAmounts = (data: MunicipalityData[]): AgeBucketData[] => {
+// Get age bucket amounts grouped by cash basis classification
+export const getAgeBucketAmounts = (data: ApiResponseData[]): AgeBucketData[] => {
   const grouped: Record<string, AgeBucketData> = {};
-  
+
   data.forEach(row => {
-    const cashBasis = row.CASH_BASIS_RECOGNISE_REVENUE as string || 'Unknown';
-    
+    const cashBasis = row.classification || 'Unknown';
+
     if (!grouped[cashBasis]) {
       grouped[cashBasis] = {
         cashBasis,
@@ -172,20 +186,14 @@ export const getAgeBucketAmounts = (data: MunicipalityData[]): AgeBucketData[] =
         '90+': 0,
       };
     }
-    
+
     // Sum amounts in each age bucket
-    const current = typeof row.CURRENT === 'number' ? row.CURRENT : parseFloat(row.CURRENT as string) || 0;
-    const due16_30 = typeof row.DUE_16_30 === 'number' ? row.DUE_16_30 : parseFloat(row.DUE_16_30 as string) || 0;
-    const due31_60 = typeof row.DUE_31_60 === 'number' ? row.DUE_31_60 : parseFloat(row.DUE_31_60 as string) || 0;
-    const due61_90 = typeof row.DUE_61_90 === 'number' ? row.DUE_61_90 : parseFloat(row.DUE_61_90 as string) || 0;
-    const due91_plus = typeof row.DUE_91_PLUS === 'number' ? row.DUE_91_PLUS : parseFloat(row.DUE_91_PLUS as string) || 0;
-    
-    grouped[cashBasis]['0-15'] += current;
-    grouped[cashBasis]['16-30'] += due16_30;
-    grouped[cashBasis]['31-60'] += due31_60;
-    grouped[cashBasis]['61-90'] += due61_90;
-    grouped[cashBasis]['90+'] += due91_plus;
+    grouped[cashBasis]['0-15'] += row.current;
+    grouped[cashBasis]['16-30'] += row.due_16_30;
+    grouped[cashBasis]['31-60'] += row.due_31_60;
+    grouped[cashBasis]['61-90'] += row.due_61_90;
+    grouped[cashBasis]['90+'] += row.due_91_plus;
   });
-  
+
   return Object.values(grouped);
 };
